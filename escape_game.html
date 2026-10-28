@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Escape Game de l'ENSP</title>
+<style>
+  html,
+  body {
+    height: 100%;
+  }
+
+  body {
+    font-family: sans-serif;
+    margin: 0;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    background-image: url("https://i.imgur.com/xHuThuc.jpeg");
+    background-size: cover;
+  }
+
+  h1 {
+    color: #fff;
+    margin: 20px 0;
+  }
+
+  #main {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    padding: 10px 20px;
+    overflow: auto;
+  }
+
+  .screen {
+    display: none;
+  }
+
+  .screen.active {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100%;
+  }
+
+  /* ---------- Pseudo-fenêtre ---------- */
+  .window {
+    width: 90%;
+    max-width: 1000px;
+    background-color: #f2f2f2;
+    border: 2px solid #555;
+    border-radius: 10px;
+    box-shadow: 4px 4px 12px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+  }
+
+  .titlebar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #dcdcdc;
+    border-bottom: 2px solid #555;
+    padding: 6px 10px;
+    text-align: left;
+  }
+
+  .title {
+    color: #0f6030;
+    font-weight: bold;
+    font-size: 1.2em;
+  }
+
+  .back {
+    font-size: 1em;
+    font-weight: bold;
+    padding: 2px 14px;
+  }
+
+  .content {
+    padding: 20px;
+  }
+
+  .content img {
+    max-width: 100%;
+  }
+
+  .msg {
+    font-family: monospace;
+    font-size: 1.8em;
+    white-space: pre-line;
+    margin: 30px auto;
+    max-width: 900px;
+  }
+
+  button {
+    font-size: 1.2em;
+    padding: 8px 16px;
+    cursor: pointer;
+  }
+
+  /* ---------- Icônes du bureau ---------- */
+  #home-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 60px;
+  }
+
+  .icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 140px;
+    padding: 8px;
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-shadow: 0 0 4px #000, 0 0 4px #000, 0 0 6px #000;
+  }
+
+  .icon:hover,
+  .icon:focus {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.6);
+  }
+
+  .icon img {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 6px;
+  }
+
+  input[type=text] {
+    font-size: 1.2em;
+    padding: 8px;
+    width: 60%;
+  }
+
+  .error {
+    color: #c00;
+    min-height: 1.5em;
+  }
+
+  .big {
+    font-size: 3em;
+    font-weight: bold;
+    color: #0f6030;
+  }
+
+  .red {
+    color: #9b111e;
+  }
+
+  #footer {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    padding: 10px;
+  }
+
+  #footer img {
+    max-height: 100px;
+    max-width: 30vw;
+  }
+
+  #timer {
+    font-size: 3em;
+    font-weight: bold;
+    color: #f00;
+  }
+</style>
+</head>
+<body>
+
+<h1>Escape Game de l'ENSP</h1>
+
+<div id="main">
+
+  <!-- Message du tueur -->
+  <div id="screen-killer" class="screen">
+    <div class="window">
+      <div class="titlebar">
+        <span class="title">VIRUS INFORMATIQUE</span>
+        <button id="killer-close">X</button>
+      </div>
+      <div class="content">
+        <div class="msg">AHAHAHAH
+J’ai infecté le Fichier des Personnes Recherchées (FPR) où sont recensés les individus dangereux connus de la Police ou de la Gendarmerie. Mon virus va entièrement détruire ce fichier.
+
+Pourquoi ? Je suis dedans et ça m’embêtait.
+
+Mais j’aime bien jouer avec vous, les policiers...
+C’est pourquoi je vous lance un défi ! Pour accéder au FPR et arrêter le virus, répondez aux 3 questions grâce aux indices éparpillés dans la bibliothèque.
+
+Vous n’avez que 30 minutes, bonne chance !</div>
+        <button id="killer-ok">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Accueil (bureau) -->
+  <div id="screen-home" class="screen">
+    <div id="home-buttons">
+      <button class="icon" id="btn-killer">
+        <img src="https://cdn-icons-png.flaticon.com/512/3349/3349398.png" alt="">
+        <span>Message du tueur</span>
+      </button>
+      <button class="icon" id="btn-fpr">
+        <img src="https://cdn-icons-png.flaticon.com/512/3349/3349398.png" alt="">
+        <span>FPR</span>
+      </button>
+      <button class="icon" id="btn-warrant">
+        <img src="https://cdn-icons-png.flaticon.com/512/3349/3349398.png" alt="">
+        <span>Mandat d’arrêt</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Énigmes FPR -->
+  <div id="screen-riddle" class="screen">
+    <div class="window">
+      <div class="titlebar">
+        <span class="title" id="riddle-title"></span>
+        <button class="back">X</button>
+      </div>
+      <div class="content">
+        <audio id="riddle-audio" controls src="https://github.com/imstlth/calc-parcoursup/raw/refs/heads/main/enregistrement.mp3" hidden></audio>
+        <div class="msg" id="riddle-text"></div>
+        <input type="text" id="riddle-input" autocomplete="off">
+        <button id="riddle-submit">Valider</button>
+        <div class="error" id="riddle-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Base de données -->
+  <div id="screen-db" class="screen">
+    <div class="window">
+      <div class="titlebar">
+        <span class="title">Base de Données</span>
+        <button class="back">X</button>
+      </div>
+      <div class="content">
+        <img src="https://i.imgur.com/OvaqkpB.png" alt="Base de données">
+      </div>
+    </div>
+  </div>
+
+  <!-- Mandat d'arrêt -->
+  <div id="screen-warrant" class="screen">
+    <div class="window">
+      <div class="titlebar">
+        <span class="title">Déclarer un Mandat d’Arrêt</span>
+        <button class="back">X</button>
+      </div>
+      <div class="content">
+        <div class="msg">QUI EST LE MEURTRIER ???</div>
+        <input type="text" id="warrant-input" autocomplete="off">
+        <button id="warrant-submit">Valider</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Réussite -->
+  <div id="screen-success" class="screen">
+    <div class="window">
+      <div class="titlebar">
+        <span class="title">Fin de l’escape game</span>
+      </div>
+      <div class="content">
+        <div class="big">VOUS AVEZ RÉUSSI !</div>
+        <div class="msg red">L’escape game est terminé !
+
+Bien joué à vous, votre mandat d’arrêt a été transmis au RAID, qui a pu interpeller le criminel. Il sera jugé demain matin.
+
+Vous pouvez vous féliciter pour votre travail digne d’un enquêteur de Police.</div>
+        <button class="quit">Quitter</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Échec -->
+  <div id="screen-failure" class="screen">
+    <div class="window">
+      <div class="titlebar">
+        <span class="title">Fin de l’escape game</span>
+      </div>
+      <div class="content">
+        <div class="big">VOUS AVEZ ÉCHOUÉ...</div>
+        <div class="msg red">L’escape game est terminé !
+
+Malgré vos efforts, vous ne m'avez pas trouvé ! Non seulement j'ai tué ma victime mais j'ai également détruit vos fichiers. Je m'en vais célèbrer cette victoire...
+
+Bravo quand même pour vos efforts</div>
+        <button class="quit">Quitter</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="footer">
+  <!-- <img src="https://eformation-ensp.fr/pluginfile.php/1/core_admin/logo/0x200/1791983808/logo_ensp_v2.png" alt="ENSP"> -->
+  <div id="timer">30:00</div>
+  <!-- <img src="https://cdn.abconsent.net/cmp/images/pa/52175_1782307091.png" alt="École polytechnique"> -->
+</div>
+
+<script>
+  // ---------- Configuration ----------
+  var DURATION = 30 * 60; // secondes
+  var RIDDLES = ["1902", "bacqueux", "pour la patrie ils veillent"];
+  var MURDERER = "dominique faure";
+
+  // ---------- Utilitaires ----------
+  function normalize(s) {
+    return s
+      .toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // accents
+      .replace(/[^a-z0-9]+/g, " ")                      // ponctuation
+      .trim();
+  }
+
+  function show(id) {
+    var screens = document.querySelectorAll(".screen");
+    for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
+    document.getElementById("screen-" + id).classList.add("active");
+  }
+
+  // ---------- Chrono ----------
+  if (document.cookie === "") {
+    var prems = true;
+    document.cookie = "remaining=" + DURATION;
+  } else {
+    var prems = false;
+  }
+  var interval = null;
+  var finished = false;
+
+  function remaining() {
+    return document.cookie.slice(10);
+  }
+
+  function renderTimer() {
+
+    var m = Math.floor(remaining() / 60);
+    var s = remaining() % 60;
+    document.getElementById("timer").textContent =
+      (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+  }
+
+  function startTimer() {
+    if (interval !== null) return;
+    interval = setInterval(function () {
+      document.cookie = "remaining=" + (remaining() - 1);
+      renderTimer();
+      if (remaining() <= 0) endGame(false);
+    }, 1000);
+  }
+
+  function endGame(success) {
+    finished = true;
+    clearInterval(interval);
+    if (remaining() < 0) document.cookie = "remaining=0";
+    renderTimer();
+    show(success ? "success" : "failure");
+  }
+
+  // ---------- Écran d'accueil / message du tueur ----------
+  function closeKiller() {
+    startTimer(); // ne fait rien si déjà démarré
+    show("home");
+  }
+  document.getElementById("killer-ok").onclick = closeKiller;
+  document.getElementById("killer-close").onclick = closeKiller;
+  document.getElementById("btn-killer").onclick = function () { show("killer"); };
+
+  var backs = document.querySelectorAll(".back");
+  for (var i = 0; i < backs.length; i++) backs[i].onclick = function () { show("home"); };
+
+  var quits = document.querySelectorAll(".quit");
+  for (var j = 0; j < quits.length; j++) quits[j].onclick = function () {
+    window.close();
+    location.reload(); // si le navigateur refuse de fermer l'onglet
+  };
+
+  // ---------- FPR : énigmes ----------
+  var riddleIndex = 0; // énigme en cours (0, 1, 2) ; 3 = toutes résolues
+  var ORDINALS = ["première", "deuxième", "troisième"];
+
+  function showRiddle() {
+    if (riddleIndex >= RIDDLES.length) { show("db"); return; }
+    document.getElementById("riddle-title").textContent =
+      "Énigme n°" + (riddleIndex + 1) + "/" + RIDDLES.length;
+    document.getElementById("riddle-text").textContent =
+      "Quelle est la réponse à l’énigme " + (riddleIndex + 1) + " ?";
+    document.getElementById("riddle-audio").hidden = (riddleIndex !== 2);
+    document.getElementById("riddle-input").value = "";
+    document.getElementById("riddle-error").textContent = "";
+    show("riddle");
+    document.getElementById("riddle-input").focus();
+  }
+
+  document.getElementById("btn-fpr").onclick = showRiddle;
+
+  function submitRiddle() {
+    var answer = normalize(document.getElementById("riddle-input").value);
+    if (answer === normalize(RIDDLES[riddleIndex])) {
+      riddleIndex++;
+      showRiddle();
+    } else {
+      document.getElementById("riddle-error").textContent = "Mauvaise réponse, réessayez.";
+    }
+  }
+  document.getElementById("riddle-submit").onclick = submitRiddle;
+  document.getElementById("riddle-input").onkeydown = function (e) {
+    if (e.key === "Enter") submitRiddle();
+  };
+
+  // ---------- Mandat d'arrêt ----------
+  document.getElementById("btn-warrant").onclick = function () {
+    document.getElementById("warrant-input").value = "";
+    show("warrant");
+    document.getElementById("warrant-input").focus();
+  };
+
+  function submitWarrant() {
+    var answer = normalize(document.getElementById("warrant-input").value);
+    document.cookie = "";
+    endGame(answer === normalize(MURDERER));
+  }
+  document.getElementById("warrant-submit").onclick = submitWarrant;
+  document.getElementById("warrant-input").onkeydown = function (e) {
+    if (e.key === "Enter") submitWarrant();
+  };
+
+  // ---------- Démarrage ----------
+  renderTimer();
+  show("killer");
+  if (!prems) {
+    startTimer();
+    show("home");
+  }
+</script>
+</body>
+</html>
