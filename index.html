@@ -365,7 +365,7 @@ Bravo quand même pour vos efforts</div>
   function endGame(success) {
     finished = true;
     clearInterval(interval);
-    if (remaining() < 0) document.cookie = "remaining=0";
+    if (remaining() < 0) document.cookie = "remaining=1800";
     renderTimer();
     show(success ? "success" : "failure");
   }
