@@ -330,43 +330,45 @@ Bravo quand même pour vos efforts</div>
     for (var i = 0; i < screens.length; i++) screens[i].classList.remove("active");
     document.getElementById("screen-" + id).classList.add("active");
   }
-
   // ---------- Chrono ----------
-  if (document.cookie === "") {
-    var prems = true;
-    document.cookie = "remaining=" + DURATION;
-  } else {
-    var prems = false;
-  }
+  var STORAGE_KEY = "escape_deadline";
   var interval = null;
-  var finished = false;
+
+  function getDeadline() {
+    var v = localStorage.getItem(STORAGE_KEY);
+    return v === null ? null : Number(v);
+  }
 
   function remaining() {
-    return document.cookie.slice(10);
+    var d = getDeadline();
+    if (d === null) return DURATION;
+    return Math.max(0, Math.ceil((d - Date.now()) / 1000));
   }
 
   function renderTimer() {
-
-    var m = Math.floor(remaining() / 60);
-    var s = remaining() % 60;
+    var r = remaining();
+    var m = Math.floor(r / 60);
+    var s = r % 60;
     document.getElementById("timer").textContent =
       (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
   }
 
   function startTimer() {
     if (interval !== null) return;
+    if (getDeadline() === null) {
+      localStorage.setItem(STORAGE_KEY, Date.now() + DURATION * 1000);
+    }
     interval = setInterval(function () {
-      document.cookie = "remaining=" + (remaining() - 1);
       renderTimer();
       if (remaining() <= 0) endGame(false);
     }, 1000);
   }
 
   function endGame(success) {
-    finished = true;
     clearInterval(interval);
-    if (remaining() < 0) document.cookie = "remaining=1800";
+    interval = null;
     renderTimer();
+    localStorage.removeItem(STORAGE_KEY);
     show(success ? "success" : "failure");
   }
 
@@ -430,7 +432,6 @@ Bravo quand même pour vos efforts</div>
 
   function submitWarrant() {
     var answer = normalize(document.getElementById("warrant-input").value);
-    document.cookie = "";
     endGame(answer === normalize(MURDERER));
   }
   document.getElementById("warrant-submit").onclick = submitWarrant;
@@ -440,9 +441,12 @@ Bravo quand même pour vos efforts</div>
 
   // ---------- Démarrage ----------
   renderTimer();
-  show("killer");
-  if (!prems) {
-    startTimer();
+  if (getDeadline() === null) {
+    show("killer");              // première visite : message du tueur
+  } else if (remaining() <= 0) {
+    endGame(false);              // le temps s'est écoulé pendant l'absence
+  } else {
+    startTimer();                // partie en cours : retour au bureau
     show("home");
   }
 </script>
